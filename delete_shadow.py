@@ -25,7 +25,7 @@ def login_api():
     finally:
         return session_key,status,access_token
 
-def keep_alive_ping(device_id,session_key,access_token,ping_command):
+def ping_request_sender(device_id,session_key,access_token,ping_command):
     test_status = "Pass"
     if session_key and access_token:
         status = True
@@ -143,14 +143,14 @@ if __name__ == '__main__':
             delete_shadow(f"production-{thing_name}")
         else:
             print("Please specify the environment of the things to delete")
-        keep_alive_ping(thing_name,session_key,access_token,"keep-alive")
+        ping_request_sender(thing_name,session_key,access_token,"keep-alive")
         if args.staging:
             check_shadow(f"staging-{thing_name}")
         elif args.production:
             check_shadow(f"production-{thing_name}")
         else:
             print("Please specify the environment of the things to delete")
-        keep_alive_ping(thing_name,session_key,access_token,"reboot-phone")
+        ping_request_sender(thing_name,session_key,access_token,"reboot-phone")
 
         print("\n")
     
