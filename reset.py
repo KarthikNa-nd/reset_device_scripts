@@ -204,6 +204,17 @@ class Setup:
             else:
                 print(message_format(service, "FAIL"))
 
+    def temp_change_rpi(self,pi_username):
+        if self.config.product_line == "KRT":
+            sed_command = ""
+            output, err = self.ssh.execute_command(sed_command)
+            output, err = self.ssh.execute_command("cp /home/ubuntu/config/automation_config.ini /data/nd_files/config/automation_config.ini")
+            print(message_format("automation_config.ini", "PASS"))
+        else:
+            sed_command = ""
+            output, err = self.ssh.execute_command(sed_command)
+            print(message_format("automation_config.ini", "PASS"))
+
     def get_device_version(self):
         output,err = self.ssh.execute_command("cat /home/ubuntu/.nddevice/nddevice.ini | grep nddevice | head -n 1 | awk -F'= ' {'print $2'}")
         return output
@@ -259,10 +270,10 @@ if __name__ == "__main__":
             # setup.check_logs_vod_obs()
             # setup.setup_sam_config()
             # setup.setup_conn_mgr_config()
-            setup.setup_bagheera_override()
+            # setup.setup_bagheera_override()
             # setup.setup_certificates()
             # setup.setup_services()
-            setup.reboot()
+            # setup.reboot()
             print("====================================================================")
 
     # with open(sys.argv[2]) as file:
