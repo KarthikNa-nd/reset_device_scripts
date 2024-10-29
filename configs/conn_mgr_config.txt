@@ -1,0 +1,2 @@
+profileName="SPRINT"
+apnName="internet.curiosity.sprint.com"
