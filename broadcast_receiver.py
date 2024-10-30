@@ -45,29 +45,25 @@ def receive_broadcast():
     client_socket.close()
 
 def print_table(stdscr):
-    try:
-        while True:
-            stdscr.clear()  # Clear the screen
+    while True:
+        stdscr.clear()  # Clear the screen
 
-            receive_broadcast()
-            # Define your table here
+        receive_broadcast()
+        # Define your table here
 
-            device_data_column = ["device_id", "ip_address", "username", "RelayID"]
-            device_data_list = device_data.values()
+        device_data_column = ["device_id", "ip_address", "username", "RelayID"]
+        device_data_list = device_data.values()
 
-            rpi_data_column = ["username", "ip_address"]
-            rpi_data_list = rpi_data.values()
+        rpi_data_column = ["username", "ip_address"]
+        rpi_data_list = rpi_data.values()
 
-            device_data_table = tabulate(device_data_list, headers=device_data_column, tablefmt="pipe")
-            rpi_data_table = tabulate(rpi_data_list, headers=rpi_data_column, tablefmt="pipe")
-            final_report = device_data_table + "\n\n\n" + rpi_data_table
-            stdscr.addstr(final_report)  # Print the table
-            stdscr.refresh()  # Refresh the screen to show the new data
+        device_data_table = tabulate(device_data_list, headers=device_data_column, tablefmt="pipe")
+        rpi_data_table = tabulate(rpi_data_list, headers=rpi_data_column, tablefmt="pipe")
+        final_report = device_data_table + "\n\n\n" + rpi_data_table
+        stdscr.addstr(final_report)  # Print the table
+        stdscr.refresh()  # Refresh the screen to show the new data
 
-            time.sleep(0.05)  # Wait for 2 seconds
-    except KeyboardInterrupt:
-        with open("device_data_output.txt", "w") as output:
-            output.write(final_report)
+        time.sleep(0.05)  # Wait for 2 seconds
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

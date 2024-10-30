@@ -68,13 +68,17 @@ class Setup:
         self.config: Config  = config
 
     def setup_sam_config(self):
-        self.ssh.upload_file("configs/sam_config.ini" ,"/home/ubuntu/config/sam_config.ini")
         output, err = self.ssh.execute_command("cat /home/ubuntu/.nddevice/latest/sam_config.ini")
         if ("enabled = 0" in output):
             print(message_format("sam_config.ini", "PASS"))
         else:
-            print(err)
-            print(message_format("sam_config.ini", "FAIL"))
+            self.ssh.upload_file("configs/sam_config.ini" ,"/home/ubuntu/config/sam_config.ini")
+            output, err = self.ssh.execute_command("cat /home/ubuntu/.nddevice/latest/sam_config.ini")
+            if ("enabled = 0" in output):
+                print(message_format("sam_config.ini", "PASS"))
+            else:
+                print(err)
+                print(message_format("sam_config.ini", "FAIL"))
 
     def setup_conn_mgr_config(self):
         self.ssh.upload_file("configs/conn_mgr_config.txt" ,"/home/ubuntu/config/conn_mgr_config.txt")
@@ -267,13 +271,13 @@ if __name__ == "__main__":
             # lumia_id = setup.get_lumia_id()
             # print(f"Lumia ID: {lumia_id}")
 
-            # setup.check_logs_vod_obs()
-            # setup.setup_sam_config()
-            # setup.setup_conn_mgr_config()
-            # setup.setup_bagheera_override()
+            setup.check_logs_vod_obs()
+            setup.setup_sam_config()
+            setup.setup_conn_mgr_config()
+            setup.setup_bagheera_override()
             # setup.setup_certificates()
-            # setup.setup_services()
-            # setup.reboot()
+            setup.setup_services()
+            setup.reboot()
             print("====================================================================")
 
     # with open(sys.argv[2]) as file:
