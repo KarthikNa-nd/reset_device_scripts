@@ -66,36 +66,38 @@ def print_table(stdscr):
         time.sleep(0.05)  # Wait for 2 seconds
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        device_list = sys.argv[1].split(',')
-        print(device_list)
-        # with open(sys.argv[1]) as device_list:
-        #     dl = device_list.read()
-        # device_list = dl.strip().split("\n")
-    curses.wrapper(print_table)
+    try:
+        if len(sys.argv) > 1:
+            device_list = sys.argv[1].split(',')
+            print(device_list)
+            # with open(sys.argv[1]) as device_list:
+            #     dl = device_list.read()
+            # device_list = dl.strip().split("\n")
+        curses.wrapper(print_table)
 
-    print("==========================================")
-    print("device_id,ip_address,username,RelayID")
-    for data in device_data.values():
-        print(f"{data[0]},{data[1]},{data[2]},{data[3]}")
-
-    csv_file = 'device.csv'
-
-    with open(csv_file, mode='w', newline='') as file:
-        device_writer = csv.writer(file)
-
-
-    # Write the header
-        device_writer.writerow(["device_id", "ip_address", "username", "RelayID"])
-
-    # Write the data
+    except KeyboardInterrupt:
+        print("==========================================")
+        print("device_id,ip_address,username,RelayID")
         for data in device_data.values():
-            device_writer.writerow(data)
-    
-    with open('rPi.csv', mode='w', newline='') as file:
-        rpi_writer = csv.writer(file)
+            print(f"{data[0]},{data[1]},{data[2]},{data[3]}")
 
-    # Write the header
-        rpi_writer.writerow(["username", "ip_address"])
-        for data in rpi_data.values():
-            rpi_writer.writerow(data)
+        csv_file = 'device.csv'
+
+        with open(csv_file, mode='w', newline='') as file:
+            device_writer = csv.writer(file)
+
+
+        # Write the header
+            device_writer.writerow(["device_id", "ip_address", "username", "RelayID"])
+
+        # Write the data
+            for data in device_data.values():
+                device_writer.writerow(data)
+        
+        with open('rPi.csv', mode='w', newline='') as file:
+            rpi_writer = csv.writer(file)
+
+        # Write the header
+            rpi_writer.writerow(["username", "ip_address"])
+            for data in rpi_data.values():
+                rpi_writer.writerow(data)
