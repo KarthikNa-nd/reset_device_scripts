@@ -23,6 +23,7 @@ class Config:
         self.username = "root"
         self.password = "EKM2800123Netra"
         self.bagheera_override = "/home/ubuntu/config/bagheera_override.ini"
+        self.sam_config = "/home/ubuntu/.nddevice/latest/sam_config.ini"
         if product_line in "KRT":
             self.password = "EKM2020123Krait"
             self.bagheera_override = "/data/nd_files/config/bagheera_override.ini"
@@ -68,12 +69,12 @@ class Setup:
         self.config: Config  = config
 
     def setup_sam_config(self):
-        output, err = self.ssh.execute_command("cat /home/ubuntu/.nddevice/latest/sam_config.ini")
+        output, err = self.ssh.execute_command(f"cat {self.config.sam_config}")
         if ("enabled = 0" in output):
             print(message_format("sam_config.ini", "PASS"))
         else:
-            self.ssh.upload_file("configs/sam_config.ini" ,"/home/ubuntu/config/sam_config.ini")
-            output, err = self.ssh.execute_command("cat /home/ubuntu/.nddevice/latest/sam_config.ini")
+            self.ssh.upload_file("configs/sam_config.ini" ,self.config.sam_config)
+            output, err = self.ssh.execute_command(f"cat {self.config.sam_config}")
             if ("enabled = 0" in output):
                 print(message_format("sam_config.ini", "PASS"))
             else:
@@ -268,8 +269,8 @@ if __name__ == "__main__":
             setup = Setup(ssh, config)
             device_version = setup.get_device_version()
             print(f"Device Version: {device_version}")
-            # lumia_id = setup.get_lumia_id()
-            # print(f"Lumia ID: {lumia_id}")
+            lumia_id = setup.get_lumia_id()
+            print(f"Lumia ID: {lumia_id}")
 
             setup.check_logs_vod_obs()
             setup.setup_sam_config()
