@@ -69,17 +69,16 @@ class Setup:
         self.config: Config  = config
 
     def setup_sam_config(self):
-        output, err = self.ssh.execute_command(f"cat {self.config.sam_config}")
-        if ("enabled = 0" in output):
+        self.ssh.upload_file("configs/sam_config.ini" ,self.config.sam_config)
+        output, err = self.ssh.execute_command(f"md5sum {self.config.sam_config}")
+        remote_output_md5sum = re.search(r"([a-f0-9]{32})", output)
+        local_output = subprocess.run(["md5sum", "configs/sam_config.ini"], stdout=subprocess.PIPE ).stdout.decode("utf-8")
+        local_output_md5sum = re.search(r"([a-f0-9]{32})", local_output)
+        if (remote_output_md5sum.group(1) == local_output_md5sum.group(1)):
             print(message_format("sam_config.ini", "PASS"))
         else:
-            self.ssh.upload_file("configs/sam_config.ini" ,self.config.sam_config)
-            output, err = self.ssh.execute_command(f"cat {self.config.sam_config}")
-            if ("enabled = 0" in output):
-                print(message_format("sam_config.ini", "PASS"))
-            else:
-                print(err)
-                print(message_format("sam_config.ini", "FAIL"))
+            print(err)
+            print(message_format("sam_config.ini", "FAIL"))
 
     def setup_conn_mgr_config(self):
         self.ssh.upload_file("configs/conn_mgr_config.txt" ,"/home/ubuntu/config/conn_mgr_config.txt")
@@ -272,13 +271,13 @@ if __name__ == "__main__":
             lumia_id = setup.get_lumia_id()
             print(f"Lumia ID: {lumia_id}")
 
-            setup.check_logs_vod_obs()
+            # setup.check_logs_vod_obs()
             setup.setup_sam_config()
-            setup.setup_conn_mgr_config()
-            setup.setup_bagheera_override()
+            # setup.setup_conn_mgr_config()
+            # setup.setup_bagheera_override()
             # setup.setup_certificates()
-            setup.setup_services()
-            setup.reboot()
+            # setup.setup_services()
+            # setup.reboot()
             print("====================================================================")
 
     # with open(sys.argv[2]) as file:

@@ -150,7 +150,7 @@ if __name__ == '__main__':
             check_shadow(f"production-{thing_name}")
         else:
             print("Please specify the environment of the things to delete")
-        ping_request_sender(thing_name,session_key,access_token,"reboot-phone")
+        # ping_request_sender(thing_name,session_key,access_token,"reboot-phone")
 
         print("\n")
     
