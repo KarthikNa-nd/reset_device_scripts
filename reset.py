@@ -2,6 +2,7 @@ import subprocess
 import paramiko
 import time
 import re
+from datetime import datetime as dt
 
 def message_format(key, value):
     mas_len = 30
@@ -208,16 +209,30 @@ class Setup:
             else:
                 print(message_format(service, "FAIL"))
 
-    def temp_change_rpi(self,pi_username):
-        if self.config.product_line == "KRT":
-            sed_command = ""
-            output, err = self.ssh.execute_command(sed_command)
-            output, err = self.ssh.execute_command("cp /home/ubuntu/config/automation_config.ini /data/nd_files/config/automation_config.ini")
-            print(message_format("automation_config.ini", "PASS"))
+    def device_date_check(self):
+        output, err = self.ssh.execute_command("date")
+        print(message_format("Device Date", output.strip()))
+        p = subprocess.Popen("date -u", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+
+        print(message_format("UTC Date", stdout.decode().strip()))
+        device_date = dt.strptime(output.strip(), "%a %b %d %H:%M:%S %Z %Y")
+        utc_date = dt.strptime(stdout.decode().strip(), "%A %d %B %Y %I:%M:%S %p %Z")
+
+        if device_date == utc_date:
+            print(message_format("Date Check", "PASS"))
         else:
-            sed_command = ""
-            output, err = self.ssh.execute_command(sed_command)
-            print(message_format("automation_config.ini", "PASS"))
+            if(self.config.product_line == "KRT"):
+                utc_date_str = utc_date.strftime("%d %b %Y %H:%M:%S").upper()
+                _,err = self.ssh.execute_command(f"date -s '{utc_date_str}';hwclock -w;hwclock")
+            else:
+                utc_date_str = utc_date.strftime("%m/%d/%Y %H:%M:%S")
+                _,err = self.ssh.execute_command(f"sudo hwclock --set --date \"{utc_date_str}\" -f /dev/rtc;sudo hwclock --hctosys -f /dev/rtc;sudo hwclock -r")
+            
+            if err != "":
+                print(message_format("Date Check", "FAIL"))
+            else:
+                print(message_format("Date Check", "PASS"))
 
     def get_device_version(self):
         output,err = self.ssh.execute_command("cat /home/ubuntu/.nddevice/nddevice.ini | grep nddevice | head -n 1 | awk -F'= ' {'print $2'}")
@@ -268,16 +283,17 @@ if __name__ == "__main__":
             setup = Setup(ssh, config)
             device_version = setup.get_device_version()
             print(f"Device Version: {device_version}")
-            lumia_id = setup.get_lumia_id()
-            print(f"Lumia ID: {lumia_id}")
+            # lumia_id = setup.get_lumia_id()
+            # print(f"Lumia ID: {lumia_id}")
 
-            # setup.check_logs_vod_obs()
+            setup.device_date_check()
+            setup.check_logs_vod_obs()
             setup.setup_sam_config()
-            # setup.setup_conn_mgr_config()
-            # setup.setup_bagheera_override()
-            # setup.setup_certificates()
-            # setup.setup_services()
-            # setup.reboot()
+            setup.setup_conn_mgr_config()
+            setup.setup_bagheera_override()
+            # # setup.setup_certificates()
+            setup.setup_services()
+            setup.reboot()
             print("====================================================================")
 
     # with open(sys.argv[2]) as file:
