@@ -232,7 +232,7 @@ class Setup:
             if err != "":
                 print(message_format("Date Check", "FAIL"))
             else:
-                print(message_format("Date Check", "PASS"))
+                print(message_format("Date Check", "Synced with UTC"))
 
     def get_device_version(self):
         output,err = self.ssh.execute_command("cat /home/ubuntu/.nddevice/nddevice.ini | grep nddevice | head -n 1 | awk -F'= ' {'print $2'}")
