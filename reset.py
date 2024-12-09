@@ -9,15 +9,6 @@ def message_format(key, value):
     space = " "*(mas_len-len(key)-4)
     return f"{key}{space}:{value}"
 
-# class rPi:
-#     def __init__(self, username, ip_address):
-#         self.username = username
-#         self.ip_address = ip_address
-#         self.password = "NetraDyne@123"
-
-#     def relay_all_on(self):
-#         pass
-
 class Config:
     def __init__(self, product_line = "BGR"):
         self.product_line = product_line
@@ -182,15 +173,15 @@ class Setup:
             "circular_buffer",
             "cam_rec",
             "bagheera",
-            "overspeedClient",
+            "unifiedAnalyticsClient",
             "outwardAnalyticsClient",
-            "inwardAnalyticsClient",
-            "inertialAnalyticsClient",
             "audioPlayback",
             "analytics*",
             "awsiot",
             "obd",
         ]
+        if self.config.product_line == "KRT":
+            active_service_list.remove("cam_rec")
         deactive_service_list = [
             "nd_sam",
             "ext_cam",
@@ -291,22 +282,7 @@ if __name__ == "__main__":
             setup.setup_sam_config()
             setup.setup_conn_mgr_config()
             setup.setup_bagheera_override()
-            # # setup.setup_certificates()
+            # setup.setup_certificates()
             setup.setup_services()
             setup.reboot()
             print("====================================================================")
-
-    # with open(sys.argv[2]) as file:
-    #     rPi_data = csv.DictReader(file)
-    #     for rPi in rPi_data:
-    #         if rPi.get("username") in rPi_set:
-    #             ip_address = str(rPi.get("ip_address"))
-    #             username = str(rPi.get("username"))
-    #             print(f"rPi Username: {username}, IP Address: {ip_address}")
-    #             print("--------------------------------------------------------------------")
-    #             ssh = SSHSession(ip_address, 22, username, "NetraDyne@123")
-    #             setup = Setup(ssh, Config("RPi"))
-    #             setup.reboot()
-    #             print("====================================================================")
-
-
