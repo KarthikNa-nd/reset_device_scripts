@@ -3,14 +3,28 @@ import paramiko
 import time
 import re
 from datetime import datetime as dt
+import csv
+import sys
+import tkinter as tk
+from tkinter import ttk
+from collections import OrderedDict
+from broadcast_helper import broadcast_main
 
-def message_format(key, value):
+device_status = {}
+
+def message_format(device_id, key, value):
+    if device_id in device_status.keys():
+        device_status[device_id][key] = value
+    else:
+        device_status[device_id] = OrderedDict()
+        device_status[device_id][key] = value
     mas_len = 30
     space = " "*(mas_len-len(key)-4)
     return f"{key}{space}:{value}"
 
 class Config:
-    def __init__(self, product_line = "BGR"):
+    def __init__(self, product_line = "BGR",device_id = ""):
+        self.device_id = device_id
         self.product_line = product_line
         self.username = "root"
         self.password = "EKM2800123Netra"
@@ -67,18 +81,18 @@ class Setup:
         local_output = subprocess.run(["md5sum", "configs/sam_config.ini"], stdout=subprocess.PIPE ).stdout.decode("utf-8")
         local_output_md5sum = re.search(r"([a-f0-9]{32})", local_output)
         if (remote_output_md5sum.group(1) == local_output_md5sum.group(1)):
-            print(message_format("sam_config.ini", "PASS"))
+            print(message_format(self.config.device_id,"sam_config.ini", "PASS"))
         else:
             print(err)
-            print(message_format("sam_config.ini", "FAIL"))
+            print(message_format(self.config.device_id,"sam_config.ini", "FAIL"))
 
     def setup_conn_mgr_config(self):
         self.ssh.upload_file("configs/conn_mgr_config.txt" ,"/home/ubuntu/config/conn_mgr_config.txt")
         output, err = self.ssh.execute_command("cat /home/ubuntu/config/conn_mgr_config.txt")
         if ("SPRINT" in output) and ("internet.curiosity.sprint.com" in output):
-            print(message_format("conn_mgr_config.txt", "PASS"))
+            print(message_format(self.config.device_id,"conn_mgr_config.txt", "PASS"))
         else:
-            print(message_format("conn_mgr_config.txt", "FAIL"))
+            print(message_format(self.config.device_id,"conn_mgr_config.txt", "FAIL"))
 
     def setup_bagheera_override(self):
         self.ssh.upload_file("configs/bagheera_override.ini", self.config.bagheera_override)
@@ -88,12 +102,12 @@ class Setup:
         local_outpu_md5sum = re.search(r"([a-f0-9]{32})", local_output)
         try:
             if remote_output_md5sum.group(1) == local_outpu_md5sum.group(1):
-                print(message_format("bagheera_override.ini", "PASS"))
+                print(message_format(self.config.device_id,"bagheera_override.ini", "PASS"))
             else:
-                print(message_format("bagheera_override.ini", "FAIL"))
+                print(message_format(self.config.device_id,"bagheera_override.ini", "FAIL"))
         except Exception as e:
             print(e)
-            print(message_format("bagheera_override.ini", "FAIL"))
+            print(message_format(self.config.device_id,"bagheera_override.ini", "FAIL"))
     
     def check_logs_vod_obs(self):
         if self.config.product_line == "KRT":
@@ -101,15 +115,15 @@ class Setup:
         else:
             vod_command = "sqlite3 /home/ubuntu/.nddevice/uploader.db 'select * from uploader_vod' |wc -l"
         output, err = self.ssh.execute_command(vod_command)
-        print(message_format("VOD upload remaining", output.strip()))
+        print(message_format(self.config.device_id,"VOD upload remaining", output.strip()))
 
         critical_archive_log_command = "ls /home/ubuntu/.nddevice/log/archive/critical/ | wc -l"
         output, err = self.ssh.execute_command(critical_archive_log_command)
-        print(message_format("Critical Archive Log", output.strip()))
+        print(message_format(self.config.device_id,"Critical Archive Log", output.strip()))
 
         critical_vod_command = "ls /home/ubuntu/.nddevice/observations/ | wc -l"
         output, err = self.ssh.execute_command(critical_vod_command)
-        print(message_format("Obs upload remaining", output.strip()))
+        print(message_format(self.config.device_id,"Obs upload remaining", output.strip()))
 
 
     def setup_certificates(self):
@@ -134,24 +148,24 @@ class Setup:
         time.sleep(20)
         output,err =  self.ssh.execute_command("ls /home/ubuntu/.nddevice/certificate/private.pem.key")
         if err != "":
-            print(message_format("private.pem.key", "FAIL"))
+            print(message_format(self.config.device_id,"private.pem.key", "FAIL"))
         else:
-            print(message_format("private.pem.key", "PASS"))
+            print(message_format(self.config.device_id,"private.pem.key", "PASS"))
         output,err =  self.ssh.execute_command("ls /home/ubuntu/.nddevice/certificate/certificate.pem.crt")
         if err != "":
-            print(message_format("certificate.pem.crt", "FAIL"))
+            print(message_format(self.config.device_id,"certificate.pem.crt", "FAIL"))
         else:
-            print(message_format("certificate.pem.crt", "PASS"))
+            print(message_format(self.config.device_id,"certificate.pem.crt", "PASS"))
         output,err =  self.ssh.execute_command("ls /home/ubuntu/.nddevice/certificate/ed25519key.pem")
         if err != "":
-            print(message_format("ed25519key", "FAIL"))
+            print(message_format(self.config.device_id,"ed25519key", "FAIL"))
         else:
-            print(message_format("ed25519key", "PASS"))
+            print(message_format(self.config.device_id,"ed25519key", "PASS"))
         output,err =  self.ssh.execute_command("ls /home/ubuntu/.nddevice/certificate/pub-ed25519.pem")
         if err != "":
-            print(message_format("pub-ed25519.pem", "FAIL"))
+            print(message_format(self.config.device_id,"pub-ed25519.pem", "FAIL"))
         else:
-            print(message_format("pub-ed25519.pem", "PASS"))
+            print(message_format(self.config.device_id,"pub-ed25519.pem", "PASS"))
 
 
     def setup_services(self):
@@ -190,28 +204,29 @@ class Setup:
         for service in active_service_list:
             output, err = self.ssh.execute_command(f"systemctl status {service}")
             if "active (running)" in output:
-                print(message_format(service, "PASS"))
+                print(message_format(self.config.device_id, service, "PASS"))
             else:
-                print(message_format(service, "FAIL"))
+                print(message_format(self.config.device_id, service, "FAIL"))
         for service in deactive_service_list:
             output, err = self.ssh.execute_command(f"systemctl status {service}")
             if "inactive (dead)" in output:
-                print(message_format(service, "PASS"))
+                print(message_format(self.config.device_id, service, "PASS"))
             else:
-                print(message_format(service, "FAIL"))
+                print(message_format(self.config.device_id, service, "FAIL"))
 
     def device_date_check(self):
         output, err = self.ssh.execute_command("date")
-        print(message_format("Device Date", output.strip()))
+        print(message_format(self.config.device_id, "Device Date", output.strip()))
         p = subprocess.Popen("date -u", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
 
-        print(message_format("UTC Date", stdout.decode().strip()))
+        print(message_format(self.config.device_id, "UTC Date", stdout.decode().strip()))
         device_date = dt.strptime(output.strip(), "%a %b %d %H:%M:%S %Z %Y")
-        utc_date = dt.strptime(stdout.decode().strip(), "%A %d %B %Y %I:%M:%S %p %Z")
+        # utc_date = dt.strptime(stdout.decode().strip(), "%A %d %B %Y %I:%M:%S %p %Z")
+        utc_date = dt.strptime(stdout.decode().strip(), "%a %b %d %H:%M:%S %p %Z %Y")
 
         if device_date == utc_date:
-            print(message_format("Date Check", "PASS"))
+            print(message_format(self.config.device_id, "Date Check", "PASS"))
         else:
             if(self.config.product_line == "KRT"):
                 utc_date_str = utc_date.strftime("%d %b %Y %H:%M:%S").upper()
@@ -221,9 +236,9 @@ class Setup:
                 _,err = self.ssh.execute_command(f"sudo hwclock --set --date \"{utc_date_str}\" -f /dev/rtc;sudo hwclock --hctosys -f /dev/rtc;sudo hwclock -r")
             
             if err != "":
-                print(message_format("Date Check", "FAIL"))
+                print(message_format(self.config.device_id, "Date Check", "FAIL"))
             else:
-                print(message_format("Date Check", "Synced with UTC"))
+                print(message_format(self.config.device_id, "Date Check", "Synced with UTC"))
 
     def get_device_version(self):
         output,err = self.ssh.execute_command("cat /home/ubuntu/.nddevice/nddevice.ini | grep nddevice | head -n 1 | awk -F'= ' {'print $2'}")
@@ -245,13 +260,10 @@ class Setup:
         except:
             pass
 
-if __name__ == "__main__":
-    import csv
-    import sys
-
+def reset_main():
     rPi_set = set()
 
-    with open(sys.argv[1]) as file:
+    with open("device.csv") as file:
         device_data = csv.DictReader(file)
         for device in device_data:
             if len(sys.argv) == 3:
@@ -265,7 +277,7 @@ if __name__ == "__main__":
                 product_line = "KRT"
             if device_id.startswith("66"):
                 product_line = "KRT"
-            config = Config(product_line)
+            config = Config(product_line,device_id)
             username = config.username
             password = config.password
             print(f"Device ID: {device_id}, IP Address: {ip_address}, Product Line: {product_line}") 
@@ -286,3 +298,61 @@ if __name__ == "__main__":
             setup.setup_services()
             setup.reboot()
             print("====================================================================")
+
+def ttk_table(root,data):
+    columns = ["Key"] + list(data.keys())
+    tree = ttk.Treeview(root, columns=columns, show="headings")
+    for col in columns:
+        tree.heading(col, text=col)
+        tree.column(col, width=150, anchor='center')
+
+    # Define tags for coloring
+    tree.tag_configure('PASS', background='lightgreen')
+    tree.tag_configure('FAIL', background='lightcoral')
+    tree.tag_configure('OTHER', background='lightblue')
+    tree.tag_configure('ROW_FAIL', background='lightcoral')
+
+    keys = list(next(iter(data.values())).keys())  # Get the keys from the first OrderedDict
+
+    for key in keys:
+        row = [key]
+        row_has_fail = False
+        for device_id in data.keys():
+            value = data[device_id].get(key, "")
+            if value == 'FAIL':
+                row_has_fail = True
+            row.append(value)
+        
+        item_id = tree.insert("", "end", values=row)
+        if row_has_fail:
+            tree.item(item_id, tags=('ROW_FAIL',))
+        else:
+            for col, value in zip(columns[1:], row[1:]):
+                tag = 'PASS' if value == 'PASS' else 'FAIL' if value == 'FAIL' else 'OTHER'
+                cell_tag = f"{device_id}_{key}"
+                tree.set(item_id, col, value)
+                tree.tag_configure(cell_tag, background='lightgreen' if tag == 'PASS' else 'lightcoral' if tag == 'FAIL' else 'lightblue')
+                tree.item(item_id, tags=(cell_tag,))
+
+    tree.pack(expand=True, fill='both')
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        device_list = sys.argv[1].split(",")
+        broadcast_main(device_list)
+        print("\n\n\n")
+        reset_main()
+    else:
+        reset_main()
+    print(device_status)
+
+    root = tk.Tk()
+    root.title("Device Data Table")
+    root.geometry("1920x1080")
+
+    ttk_table(root, device_status)
+
+    root.mainloop()
+
+
+        

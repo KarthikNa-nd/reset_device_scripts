@@ -133,9 +133,9 @@ if __name__ == '__main__':
     session_key,status,access_token = login_api()
 
     for thing_name in thing_names:
-        print("====================================================================")
+        print("============================================================================")
         print(f"Device ID: {thing_name}")
-        print("--------------------------------------------------------------------")
+        print("----------------------------------------------------------------------------")
 
         if args.staging:
             delete_shadow(f"staging-{thing_name}")
@@ -150,7 +150,7 @@ if __name__ == '__main__':
             check_shadow(f"production-{thing_name}")
         else:
             print("Please specify the environment of the things to delete")
-        ping_request_sender(thing_name,session_key,access_token,"reboot-phone")
+        # ping_request_sender(thing_name,session_key,access_token,"reboot-phone")
 
         print("\n")
     
