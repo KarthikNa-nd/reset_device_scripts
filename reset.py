@@ -254,14 +254,14 @@ class Setup:
 
     def get_device_version(self):
         output,err = self.ssh.execute_command("cat /home/ubuntu/.nddevice/nddevice.ini | grep nddevice | head -n 1 | awk -F'= ' {'print $2'}")
-        return output
+        print(message_format(self.config.device_id, "Device Version", output.strip()))
     
     def get_lumia_id(self):
         if self.config.product_line == "KRT":
             output,err = self.ssh.execute_command("echo 'EKM2020123Krait' | lte_gps_test 'ATi' | grep 'Model' | awk -F': ' {'print $2'}")
         else:
             output,err = self.ssh.execute_command("echo 'EKM2800123Netra' | sudo lte_gps_test 'ATi' | grep 'Model' | awk -F': ' {'print $2'}")
-        return output
+        print(message_format(self.config.device_id, "Lumia ID", output.strip()))
 
     def reboot(self):
         try:
@@ -296,11 +296,9 @@ def reset_main(csv_file):
             print("--------------------------------------------------------------------")
             ssh = SSHSession(ip_address, 22, username, password)
             setup = Setup(ssh, config)
-            device_version = setup.get_device_version()
-            print(f"Device Version: {device_version}")
-            # lumia_id = setup.get_lumia_id()
-            # print(f"Lumia ID: {lumia_id}")
 
+            setup.get_lumia_id()
+            setup.get_device_version()
             setup.device_date_check()
             setup.check_event_logs_vod_obs()
             setup.check_nd_output()
