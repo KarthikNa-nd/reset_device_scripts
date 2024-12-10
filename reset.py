@@ -107,8 +107,15 @@ class Setup:
         except Exception as e:
             print(e)
             print(message_format(self.config.device_id,"bagheera_override.ini", "FAIL"))
-    
-    def check_logs_vod_obs(self):
+
+    def check_event_logs_vod_obs(self):
+        if self.config.product_line == "KRT":
+            event_command = "sqlite3 /home/ubuntu/.nddevice/db/uploader.db 'select * from uploader' |wc -l"
+        else:
+            event_command = "sqlite3 /home/ubuntu/.nddevice/uploader.db 'select * from uploader' |wc -l"
+        output, err = self.ssh.execute_command(event_command)
+        print(message_format(self.config.device_id,"Event Upload remaining", output.strip()))
+
         if self.config.product_line == "KRT":
             vod_command = "sqlite3 /home/ubuntu/.nddevice/db/uploader.db 'select * from uploader_vod' |wc -l"
         else:
@@ -295,7 +302,7 @@ def reset_main(csv_file):
             # print(f"Lumia ID: {lumia_id}")
 
             setup.device_date_check()
-            setup.check_logs_vod_obs()
+            setup.check_event_logs_vod_obs()
             setup.check_nd_output()
             setup.setup_sam_config()
             setup.setup_conn_mgr_config()
@@ -382,6 +389,3 @@ if __name__ == "__main__":
     root.title("Device Status Table")
     root.geometry("1920x1080")
     root.mainloop()
-
-
-        
