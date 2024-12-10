@@ -5,8 +5,7 @@ import re
 from datetime import datetime as dt
 import csv
 import sys
-import tkinter as tk
-from tkinter import ttk
+from tkinter import *
 from collections import OrderedDict
 from broadcast_helper import broadcast_main
 
@@ -125,6 +124,11 @@ class Setup:
         output, err = self.ssh.execute_command(critical_vod_command)
         print(message_format(self.config.device_id,"Obs upload remaining", output.strip()))
 
+    def check_nd_output(self):
+        nd_out_command = "ls /home/iriscli/ND_OUTPUT/ | wc -l"
+        output, err = self.ssh.execute_command(nd_out_command)
+        print(message_format(self.config.device_id,"ND_OUTPUT", output.strip()))
+
 
     def setup_certificates(self):
         # overall_status = False
@@ -196,6 +200,7 @@ class Setup:
         ]
         if self.config.product_line == "KRT":
             active_service_list.remove("cam_rec")
+            message_format(self.config.device_id, "cam_rec", "N/A")
         deactive_service_list = [
             "nd_sam",
             "ext_cam",
@@ -260,10 +265,10 @@ class Setup:
         except:
             pass
 
-def reset_main():
+def reset_main(csv_file):
     rPi_set = set()
 
-    with open("device.csv") as file:
+    with open(csv_file) as file:
         device_data = csv.DictReader(file)
         for device in device_data:
             if len(sys.argv) == 3:
@@ -291,6 +296,7 @@ def reset_main():
 
             setup.device_date_check()
             setup.check_logs_vod_obs()
+            setup.check_nd_output()
             setup.setup_sam_config()
             setup.setup_conn_mgr_config()
             setup.setup_bagheera_override()
@@ -299,59 +305,82 @@ def reset_main():
             setup.reboot()
             print("====================================================================")
 
-def ttk_table(root,data):
-    columns = ["Key"] + list(data.keys())
-    tree = ttk.Treeview(root, columns=columns, show="headings")
-    for col in columns:
-        tree.heading(col, text=col)
-        tree.column(col, width=150, anchor='center')
+def create_label(root, text, width, label_type="default"):
+    if label_type == "header":
+        return Label(root, text=text, relief=RIDGE, width=width, bg="lightgrey", font=("Helvetica", 12, "bold"), height=2, padx=2, pady=5)
+    elif label_type == "pass":
+        return Label(root, text=text, relief=RIDGE, width=width, bg="lightgreen", font=("Helvetica", 12),height=1, padx=2, pady=2)
+    elif label_type == "fail":
+        return Label(root, text=text, relief=RIDGE, width=width, bg="lightcoral", font=("Helvetica", 12),height=1, padx=2, pady=2)
+    elif label_type == "leftHeader":
+        return Label(root, text=text, relief=RIDGE, width=width, bg="white", font=("Helvetica", 12, "bold"), height=1, padx=2, pady=2)
+    else:
+        return Label(root, text=text, relief=RIDGE, width=width, bg="lightblue", font=("Helvetica", 12),height=1, padx=2, pady=2)
 
-    # Define tags for coloring
-    tree.tag_configure('PASS', background='lightgreen')
-    tree.tag_configure('FAIL', background='lightcoral')
-    tree.tag_configure('OTHER', background='lightblue')
-    tree.tag_configure('ROW_FAIL', background='lightcoral')
+def make_table(root, data):
+    total_cols = len(data) + 1
+    total_rows = len(next(iter(data.values()))) + 1
+    row_names = list(next(iter(data.values())).keys())
 
-    keys = list(next(iter(data.values())).keys())  # Get the keys from the first OrderedDict
-
-    for key in keys:
-        row = [key]
-        row_has_fail = False
+    # Calculate the maximum width required for each column
+    col_widths = [len("Device ID")]
+    for device_id in data.keys():
+        col_widths.append(len(device_id))
+    for row_name in row_names:
+        col_widths[0] = max(col_widths[0], len(row_name))
         for device_id in data.keys():
-            value = data[device_id].get(key, "")
-            if value == 'FAIL':
-                row_has_fail = True
-            row.append(value)
-        
-        item_id = tree.insert("", "end", values=row)
-        if row_has_fail:
-            tree.item(item_id, tags=('ROW_FAIL',))
-        else:
-            for col, value in zip(columns[1:], row[1:]):
-                tag = 'PASS' if value == 'PASS' else 'FAIL' if value == 'FAIL' else 'OTHER'
-                cell_tag = f"{device_id}_{key}"
-                tree.set(item_id, col, value)
-                tree.tag_configure(cell_tag, background='lightgreen' if tag == 'PASS' else 'lightcoral' if tag == 'FAIL' else 'lightblue')
-                tree.item(item_id, tags=(cell_tag,))
+            value = data[device_id][row_name]
+            col_widths[list(data.keys()).index(device_id) + 1] = max(col_widths[list(data.keys()).index(device_id) + 1], len(value))
 
-    tree.pack(expand=True, fill='both')
+    # Create a canvas and a frame inside it
+    canvas = Canvas(root)
+    frame = Frame(canvas)
+    h_scrollbar = Scrollbar(root, orient=HORIZONTAL, command=canvas.xview)
+    v_scrollbar = Scrollbar(root, orient=VERTICAL, command=canvas.yview)
+    canvas.configure(xscrollcommand=h_scrollbar.set, yscrollcommand=v_scrollbar.set)
+
+    h_scrollbar.pack(side=BOTTOM, fill=X)
+    v_scrollbar.pack(side=RIGHT, fill=Y)
+    canvas.pack(side=LEFT, fill=BOTH, expand=True)
+    canvas.create_window((0, 0), window=frame, anchor="nw")
+
+    # Update the scroll region of the canvas
+    frame.bind("<Configure>", lambda event, canvas=canvas: canvas.configure(scrollregion=canvas.bbox("all")))
+
+    for i in range(total_rows):
+        if i == 0:
+            for j in range(total_cols):
+                if j == 0:
+                    label = create_label(frame, "Device ID", col_widths[j], label_type="header")
+                else:
+                    label = create_label(frame, list(data.keys())[j-1], col_widths[j], label_type="header")
+                label.grid(row=i, column=j)
+        else:
+            for j in range(total_cols):
+                if j == 0:
+                    label = create_label(frame, row_names[i-1], col_widths[j], label_type="leftHeader")
+                else:
+                    device_id = list(data.keys())[j-1]
+                    value = data[device_id][row_names[i-1]]
+                    label_type = "pass" if value == "PASS" else "fail" if value == "FAIL" else "default"
+                    label = create_label(frame, value, col_widths[j], label_type=label_type)
+                label.grid(row=i, column=j)
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 1 and not sys.argv[1].endswith(".csv"):
         device_list = sys.argv[1].split(",")
         broadcast_main(device_list)
         print("\n\n\n")
-        reset_main()
+        reset_main("device.csv")
+    elif len(sys.argv) > 1 and sys.argv[1].endswith(".csv"):
+        reset_main(sys.argv[1])
     else:
-        reset_main()
-    print(device_status)
+        print("Please provide the device list or device csv")
 
-    root = tk.Tk()
-    root.title("Device Data Table")
+    root = Tk()
+    make_table(root,device_status)
+    root.title("Device Status Table")
     root.geometry("1920x1080")
-
-    ttk_table(root, device_status)
-
     root.mainloop()
 
 
