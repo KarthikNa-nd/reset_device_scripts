@@ -131,11 +131,20 @@ class Setup:
         output, err = self.ssh.execute_command(critical_vod_command)
         print(message_format(self.config.device_id,"Obs upload remaining", output.strip()))
 
-    def check_nd_output(self):
-        nd_out_command = "ls /home/iriscli/ND_OUTPUT/ | wc -l"
-        output, err = self.ssh.execute_command(nd_out_command)
-        print(message_format(self.config.device_id,"ND_OUTPUT", output.strip()))
+    def check_nd_output_nd_input(self):
+        if self.config.product_line == "KRT":
+            output,err = self.ssh.execute_command("echo 'EKM2020123Krait' | sudo rm -rf /home/iriscli/ND_OUTPUT/*")
+            output_in,err = self.ssh.execute_command("echo 'EKM2020123Krait' | sudo rm -rf /home/iriscli/ND_INPUT/*")
+        else:
+            output,err = self.ssh.execute_command("echo 'EKM2800123Netra' | sudo rm -rf /home/iriscli/ND_OUTPUT/*")
+            output_in,err = self.ssh.execute_command("echo 'EKM2800123Netra' | sudo rm -rf /home/iriscli/ND_INPUT/*")
 
+        nd_out_command = "ls /home/iriscli/ND_OUTPUT/ | wc -l"
+        nd_in_command = "ls /home/iriscli/ND_INPUT/ | wc -l"
+        output_out, err = self.ssh.execute_command(nd_out_command)
+        output_in, err = self.ssh.execute_command(nd_in_command)
+        print(message_format(self.config.device_id,"ND_OUTPUT", output_out.strip()))
+        print(message_format(self.config.device_id,"ND_OUTPUT", output_in.strip()))
 
     def setup_certificates(self):
         # overall_status = False
@@ -301,7 +310,7 @@ def reset_main(csv_file):
             setup.get_device_version()
             setup.device_date_check()
             setup.check_event_logs_vod_obs()
-            setup.check_nd_output()
+            setup.check_nd_output_nd_input()
             setup.setup_sam_config()
             setup.setup_conn_mgr_config()
             setup.setup_bagheera_override()
