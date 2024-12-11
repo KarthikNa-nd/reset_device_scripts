@@ -143,8 +143,8 @@ class Setup:
         nd_in_command = "ls /home/iriscli/ND_INPUT/ | wc -l"
         output_out, err = self.ssh.execute_command(nd_out_command)
         output_in, err = self.ssh.execute_command(nd_in_command)
-        print(message_format(self.config.device_id,"ND_OUTPUT", output_out.strip()))
-        print(message_format(self.config.device_id,"ND_OUTPUT", output_in.strip()))
+        print(message_format(self.config.device_id,"ND_output", output_out.strip()))
+        print(message_format(self.config.device_id,"ND_input", output_in.strip()))
 
     def setup_certificates(self):
         # overall_status = False
@@ -244,7 +244,7 @@ class Setup:
         print(message_format(self.config.device_id, "UTC Date", stdout.decode().strip()))
         device_date = dt.strptime(output.strip(), "%a %b %d %H:%M:%S %Z %Y")
         # utc_date = dt.strptime(stdout.decode().strip(), "%A %d %B %Y %I:%M:%S %p %Z")
-        utc_date = dt.strptime(stdout.decode().strip(), "%a %b %d %H:%M:%S %p %Z %Y")
+        utc_date = dt.strptime(stdout.decode().strip(), "%A %d %B %Y %I:%M:%S %p %Z")
 
         if device_date == utc_date:
             print(message_format(self.config.device_id, "Date Check", "PASS"))
