@@ -447,6 +447,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--devices", help="Comma-separated list of devices")
     parser.add_argument("-c", "--csv", help="CSV file with device information")
     parser.add_argument("-s", "--save", action="store_true", help="Save output to Excel")
+    parser.add_argument("--no-table", action="store_true", help="Disable Tkinter table display")
 
     args = parser.parse_args()
 
@@ -460,8 +461,9 @@ if __name__ == "__main__":
     if args.save:
         save_table_to_excel(device_status, "device_status.xlsx")
 
-    root = Tk()
-    make_table(root,device_status)
-    root.title("Device Status Table")
-    root.geometry("1920x1080")
-    root.mainloop()
+    if not args.no_table:
+        root = Tk()
+        make_table(root,device_status)
+        root.title("Device Status Table")
+        root.geometry("1920x1080")
+        root.mainloop()

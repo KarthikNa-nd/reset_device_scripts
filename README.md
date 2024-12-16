@@ -14,6 +14,7 @@ To run the device reset script, you can use the following command-line options:
 - `-d` or `--devices`: Provide a comma-separated list of devices.
 - `-c` or `--csv`: Provide a CSV file with device information.
 - `-s` or `--save`: Save the output to an Excel file.
+- `--no-table`: Stops the creation of a persistent table at the end
 
 ### Examples
 
@@ -40,7 +41,10 @@ To run the device reset script, you can use the following command-line options:
     ```sh
     python reset.py -d device1,device2,device3 -s
     ```
-
+5. **If you don't want there to be a persisitent table (for use with cron):**
+    ```sh
+    python reset.py --no-table ...
+     ```
 # delete_shadow.py
 ## Usage
 - `-d` or `--devices`: Provide a comma-separated list of devices.
