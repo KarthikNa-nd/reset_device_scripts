@@ -1,6 +1,10 @@
 # broadcast_receiver.py
- - usage: python3 broadcast_receiver {comma separated device_ids or pi ID}
- - output - device.csv and rPi.csv
+1. ##Usage
+   ```sh
+   python3 broadcast_receiver {comma separated device_ids or pi ID}
+   ```
+2. ##Output
+   device.csv and rPi.csv
 
 # reset_device.py
 ## Usage
@@ -38,5 +42,11 @@ To run the device reset script, you can use the following command-line options:
     ```
 
 # delete_shadow.py
- - usage: python3 delete_shadow.py -d {comma separated device_ids} -s|p {s for staging | p for production}
- - Do aws sso login before running
+##Usage
+- `-d` or `--devices`: Provide a comma-separated list of devices.
+- `-s`: for staging
+- `-p`: for production
+```sh
+  python3 delete_shadow.py -d {comma separated device_ids} -s|p {s for staging | p for production}
+```
+ **Do aws sso login before running**
