@@ -1,9 +1,9 @@
 # broadcast_receiver.py
-1. ##Usage
+## Usage
    ```sh
    python3 broadcast_receiver {comma separated device_ids or pi ID}
    ```
-2. ##Output
+## Output
    device.csv and rPi.csv
 
 # reset_device.py
@@ -42,7 +42,7 @@ To run the device reset script, you can use the following command-line options:
     ```
 
 # delete_shadow.py
-##Usage
+## Usage
 - `-d` or `--devices`: Provide a comma-separated list of devices.
 - `-s`: for staging
 - `-p`: for production
