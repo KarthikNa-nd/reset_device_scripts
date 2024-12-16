@@ -8,6 +8,8 @@ import sys
 from tkinter import *
 from collections import OrderedDict
 from broadcast_helper import broadcast_main
+from openpyxl import Workbook
+from openpyxl.styles import PatternFill, Font, Alignment
 
 device_status = {}
 
@@ -242,24 +244,24 @@ class Setup:
         stdout, stderr = p.communicate()
 
         print(message_format(self.config.device_id, "UTC Date", stdout.decode().strip()))
-        device_date = dt.strptime(output.strip(), "%a %b %d %H:%M:%S %Z %Y")
+        # device_date = dt.strptime(output.strip(), "%a %b %d %H:%M:%S %Z %Y")
+        # # utc_date = dt.strptime(stdout.decode().strip(), "%A %d %B %Y %I:%M:%S %p %Z")
         # utc_date = dt.strptime(stdout.decode().strip(), "%A %d %B %Y %I:%M:%S %p %Z")
-        utc_date = dt.strptime(stdout.decode().strip(), "%A %d %B %Y %I:%M:%S %p %Z")
 
-        if device_date == utc_date:
-            print(message_format(self.config.device_id, "Date Check", "PASS"))
-        else:
-            if(self.config.product_line == "KRT"):
-                utc_date_str = utc_date.strftime("%d %b %Y %H:%M:%S").upper()
-                _,err = self.ssh.execute_command(f"date -s '{utc_date_str}';hwclock -w;hwclock")
-            else:
-                utc_date_str = utc_date.strftime("%m/%d/%Y %H:%M:%S")
-                _,err = self.ssh.execute_command(f"sudo hwclock --set --date \"{utc_date_str}\" -f /dev/rtc;sudo hwclock --hctosys -f /dev/rtc;sudo hwclock -r")
+        # if device_date == utc_date:
+        #     print(message_format(self.config.device_id, "Date Check", "PASS"))
+        # else:
+        #     if(self.config.product_line == "KRT"):
+        #         utc_date_str = utc_date.strftime("%d %b %Y %H:%M:%S").upper()
+        #         _,err = self.ssh.execute_command(f"date -s '{utc_date_str}';hwclock -w;hwclock")
+        #     else:
+        #         utc_date_str = utc_date.strftime("%m/%d/%Y %H:%M:%S")
+        #         _,err = self.ssh.execute_command(f"sudo hwclock --set --date \"{utc_date_str}\" -f /dev/rtc;sudo hwclock --hctosys -f /dev/rtc;sudo hwclock -r")
             
-            if err != "":
-                print(message_format(self.config.device_id, "Date Check", "FAIL"))
-            else:
-                print(message_format(self.config.device_id, "Date Check", "Synced with UTC"))
+        #     if err != "":
+        #         print(message_format(self.config.device_id, "Date Check", "FAIL"))
+        #     else:
+        #         print(message_format(self.config.device_id, "Date Check", "Synced with UTC"))
 
     def get_device_version(self):
         output,err = self.ssh.execute_command("cat /home/ubuntu/.nddevice/nddevice.ini | grep nddevice | head -n 1 | awk -F'= ' {'print $2'}")
@@ -380,6 +382,64 @@ def make_table(root, data):
                     label = create_label(frame, value, col_widths[j], label_type=label_type)
                 label.grid(row=i, column=j)
 
+def save_table_to_excel(data, file_path):
+    wb = Workbook()
+    ws = wb.active
+
+    # Define styles
+    header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+    pass_fill = PatternFill(start_color="90EE90", end_color="90EE90", fill_type="solid")
+    fail_fill = PatternFill(start_color="F08080", end_color="F08080", fill_type="solid")
+    left_header_fill = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+    default_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")
+
+    header_font = Font(name="Helvetica", size=12, bold=True)
+    default_font = Font(name="Helvetica", size=12)
+    alignment = Alignment(horizontal="center", vertical="center")
+
+    # Write headers
+    headers = ["Device ID"] + list(data.keys())
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = alignment
+
+    # Write data
+    row_names = list(next(iter(data.values())).keys())
+    for row_num, row_name in enumerate(row_names, 2):
+        cell = ws.cell(row=row_num, column=1, value=row_name)
+        cell.fill = left_header_fill
+        cell.font = header_font
+        cell.alignment = alignment
+
+        for col_num, device_id in enumerate(data.keys(), 2):
+            value = data[device_id][row_name]
+            cell = ws.cell(row=row_num, column=col_num, value=value)
+            if value == "PASS":
+                cell.fill = pass_fill
+            elif value == "FAIL":
+                cell.fill = fail_fill
+            else:
+                cell.fill = default_fill
+            cell.font = default_font
+            cell.alignment = alignment
+            
+    # Adjust column widths
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter  # Get the column name
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column].width = adjusted_width
+
+    wb.save(file_path)
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and not sys.argv[1].endswith(".csv"):
         device_list = sys.argv[1].split(",")
@@ -391,8 +451,9 @@ if __name__ == "__main__":
     else:
         print("Please provide the device list or device csv")
 
-    root = Tk()
-    make_table(root,device_status)
-    root.title("Device Status Table")
-    root.geometry("1920x1080")
-    root.mainloop()
+    save_table_to_excel(device_status, "device_status.xlsx")
+    # root = Tk()
+    # make_table(root,device_status)
+    # root.title("Device Status Table")
+    # root.geometry("1920x1080")
+    # root.mainloop()
