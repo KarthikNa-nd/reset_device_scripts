@@ -10,6 +10,8 @@ from collections import OrderedDict
 from broadcast_helper import broadcast_main
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font, Alignment
+import argparse
+
 
 device_status = {}
 
@@ -424,7 +426,7 @@ def save_table_to_excel(data, file_path):
                 cell.fill = default_fill
             cell.font = default_font
             cell.alignment = alignment
-            
+
     # Adjust column widths
     for col in ws.columns:
         max_length = 0
@@ -441,19 +443,25 @@ def save_table_to_excel(data, file_path):
     wb.save(file_path)
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and not sys.argv[1].endswith(".csv"):
-        device_list = sys.argv[1].split(",")
+    parser = argparse.ArgumentParser(description="Device reset script")
+    parser.add_argument("-d", "--devices", help="Comma-separated list of devices")
+    parser.add_argument("-c", "--csv", help="CSV file with device information")
+    parser.add_argument("-s", "--save", action="store_true", help="Save output to Excel")
+
+    args = parser.parse_args()
+
+    if args.devices:
+        device_list = args.devices.split(",")
         broadcast_main(device_list)
         print("\n\n\n")
         reset_main("device.csv")
-    elif len(sys.argv) > 1 and sys.argv[1].endswith(".csv"):
-        reset_main(sys.argv[1])
     else:
-        print("Please provide the device list or device csv")
+        print("Please provide the device list with -d or the device csv with -c")
+    if args.save:
+        save_table_to_excel(device_status, "device_status.xlsx")
 
-    save_table_to_excel(device_status, "device_status.xlsx")
-    # root = Tk()
-    # make_table(root,device_status)
-    # root.title("Device Status Table")
-    # root.geometry("1920x1080")
-    # root.mainloop()
+    root = Tk()
+    make_table(root,device_status)
+    root.title("Device Status Table")
+    root.geometry("1920x1080")
+    root.mainloop()
