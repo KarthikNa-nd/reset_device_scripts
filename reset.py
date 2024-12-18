@@ -291,9 +291,6 @@ def reset_main(csv_file):
     with open(csv_file) as file:
         device_data = csv.DictReader(file)
         for device in device_data:
-            if len(sys.argv) == 3:
-                if device.get("device_id") != sys.argv[2]:
-                    continue
             device_id = str(device.get("device_id"))
             ip_address = str(device.get("ip_address"))
             rPi_set.add(str(device.get("username")))
@@ -447,23 +444,32 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--devices", help="Comma-separated list of devices")
     parser.add_argument("-c", "--csv", help="CSV file with device information")
     parser.add_argument("-s", "--save", action="store_true", help="Save output to Excel")
-    parser.add_argument("--no-table", action="store_true", help="Disable Tkinter table display")
+    parser.add_argument("--no-tk", action="store_true", help="Disable Tkinter table display")
 
     args = parser.parse_args()
 
+    print("Arguments parsed:", args)
+
     if args.devices:
+        print("Devices argument provided")
         device_list = args.devices.split(",")
         broadcast_main(device_list)
         print("\n\n\n")
         reset_main("device.csv")
+    elif args.csv:
+        print("CSV argument provided")
+        reset_main(args.csv)
     else:
         print("Please provide the device list with -d or the device csv with -c")
+
     if args.save:
+        print("Saving to Excel")
         save_table_to_excel(device_status, "device_status.xlsx")
 
-    if not args.no_table:
+    if not args.no_tk:
+        print("Displaying Tkinter table")
         root = Tk()
-        make_table(root,device_status)
+        make_table(root, device_status)
         root.title("Device Status Table")
         root.geometry("1920x1080")
         root.mainloop()
