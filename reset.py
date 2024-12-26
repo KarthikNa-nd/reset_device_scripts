@@ -55,7 +55,7 @@ class SSHSession:
     def upload_file(self, local_file_path, remote_file_path):
         # ftp = self.client.open_sftp()
         # ftp.put(local_file_path, remote_file_path)
-        command = f"sshpass -p {self.password} scp {local_file_path} {self.username}@{self.host}:{remote_file_path}"
+        command = f"sshpass -p {self.password} scp -o StrictHostKeyChecking=no {local_file_path} {self.username}@{self.host}:{remote_file_path}"
         p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         if "Host key verification failed." in stderr.decode():
@@ -100,6 +100,9 @@ class Setup:
     def setup_bagheera_override(self):
         self.ssh.upload_file("configs/bagheera_override.ini", self.config.bagheera_override)
         output, err = self.ssh.execute_command(f"md5sum {self.config.bagheera_override}")
+        if err:
+            print(err)
+            print(message_format(self.config.device_id,"bagheera_override.ini", "FAIL"))
         remote_output_md5sum = re.search(r"([a-f0-9]{32})", output)
         local_output = subprocess.run(["md5sum", "configs/bagheera_override.ini"], stdout=subprocess.PIPE ).stdout.decode("utf-8")
         local_outpu_md5sum = re.search(r"([a-f0-9]{32})", local_output)
@@ -312,7 +315,7 @@ def reset_main(csv_file):
             setup.device_date_check()
             setup.check_event_logs_vod_obs()
             setup.check_nd_output_nd_input()
-            setup.setup_sam_config()
+            # setup.setup_sam_config()
             setup.setup_conn_mgr_config()
             setup.setup_bagheera_override()
             # setup.setup_certificates()

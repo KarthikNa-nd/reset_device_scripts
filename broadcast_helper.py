@@ -1,7 +1,5 @@
 from tabulate import tabulate
-import curses
 import socket
-import sys
 import json
 import time
 import csv
