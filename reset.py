@@ -4,6 +4,7 @@ import time
 import re
 from datetime import datetime as dt
 import csv
+import json
 import sys
 from tkinter import *
 from collections import OrderedDict
@@ -249,24 +250,24 @@ class Setup:
         stdout, stderr = p.communicate()
 
         print(message_format(self.config.device_id, "UTC Date", stdout.decode().strip()))
-        # device_date = dt.strptime(output.strip(), "%a %b %d %H:%M:%S %Z %Y")
-        # # utc_date = dt.strptime(stdout.decode().strip(), "%A %d %B %Y %I:%M:%S %p %Z")
+        device_date = dt.strptime(output.strip(), "%a %b %d %H:%M:%S %Z %Y")
+        utc_date = dt.strptime(stdout.decode().strip(), "%a %d %b %Y %I:%M:%S %p %Z")
         # utc_date = dt.strptime(stdout.decode().strip(), "%A %d %B %Y %I:%M:%S %p %Z")
 
-        # if device_date == utc_date:
-        #     print(message_format(self.config.device_id, "Date Check", "PASS"))
-        # else:
-        #     if(self.config.product_line == "KRT"):
-        #         utc_date_str = utc_date.strftime("%d %b %Y %H:%M:%S").upper()
-        #         _,err = self.ssh.execute_command(f"date -s '{utc_date_str}';hwclock -w;hwclock")
-        #     else:
-        #         utc_date_str = utc_date.strftime("%m/%d/%Y %H:%M:%S")
-        #         _,err = self.ssh.execute_command(f"sudo hwclock --set --date \"{utc_date_str}\" -f /dev/rtc;sudo hwclock --hctosys -f /dev/rtc;sudo hwclock -r")
+        if device_date == utc_date:
+            print(message_format(self.config.device_id, "Date Check", "PASS"))
+        else:
+            if(self.config.product_line == "KRT"):
+                utc_date_str = utc_date.strftime("%d %b %Y %H:%M:%S").upper()
+                _,err = self.ssh.execute_command(f"date -s '{utc_date_str}';hwclock -w;hwclock")
+            else:
+                utc_date_str = utc_date.strftime("%m/%d/%Y %H:%M:%S")
+                _,err = self.ssh.execute_command(f"sudo hwclock --set --date \"{utc_date_str}\" -f /dev/rtc;sudo hwclock --hctosys -f /dev/rtc;sudo hwclock -r")
             
-        #     if err != "":
-        #         print(message_format(self.config.device_id, "Date Check", "FAIL"))
-        #     else:
-        #         print(message_format(self.config.device_id, "Date Check", "Synced with UTC"))
+            if err != "":
+                print(message_format(self.config.device_id, "Date Check", "FAIL"))
+            else:
+                print(message_format(self.config.device_id, "Date Check", "Synced with UTC"))
 
     def get_device_version(self):
         output,err = self.ssh.execute_command("cat /home/ubuntu/.nddevice/nddevice.ini | grep nddevice | head -n 1 | awk -F'= ' {'print $2'}")
@@ -446,13 +447,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Device reset script")
     parser.add_argument("-d", "--devices", help="Comma-separated list of devices")
     parser.add_argument("-c", "--csv", help="CSV file with device information")
+    parser.add_argument("-j", "--json", help="JSON file with device information")
     parser.add_argument("-s", "--save", action="store_true", help="Save output to Excel")
     parser.add_argument("--no-tk", action="store_true", help="Disable Tkinter table display")
 
     args = parser.parse_args()
 
-    print("Arguments parsed:", args)
-
+    if args.json:
+        print("JSON argument provided")
+        with open("device_rack.json") as file:
+            json_data = json.load(file)
+            device_data = json_data[args.json]
+            device_data = [str(x) for x in device_data]
+            file.close()
+        broadcast_main(device_data)
+        print("\n\n\n")
+        reset_main("device.csv")
+        
     if args.devices:
         print("Devices argument provided")
         device_list = args.devices.split(",")
