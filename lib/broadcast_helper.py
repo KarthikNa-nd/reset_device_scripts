@@ -3,6 +3,7 @@ import socket
 import json
 import time
 import csv
+import os
 
 final_output = ""
 device_data = {}
@@ -75,7 +76,11 @@ def print_table(device_list):
     for data in device_data.values():
         print(f"{data[0]},{data[1]},{data[2]},{data[3]}")
 
-    csv_file = 'device.csv'
+    output_folder = "Output"
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    csv_file = os.path.join(output_folder, 'device.csv')
 
     with open(csv_file, mode='w', newline='') as file:
         device_writer = csv.writer(file)
@@ -83,7 +88,9 @@ def print_table(device_list):
         for data in device_data.values():
             device_writer.writerow(data)
 
-    with open('rPi.csv', mode='w', newline='') as file:
+    rpi_csv_file = os.path.join(output_folder, 'rPi.csv')
+
+    with open(rpi_csv_file, mode='w', newline='') as file:
         rpi_writer = csv.writer(file)
         rpi_writer.writerow(["username", "ip_address"])
         for data in rpi_data.values():

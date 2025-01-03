@@ -8,10 +8,11 @@ import json
 import sys
 from tkinter import *
 from collections import OrderedDict
-from broadcast_helper import broadcast_main
+from lib.broadcast_helper import broadcast_main
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font, Alignment
 import argparse
+import os
 
 
 device_status = {}
@@ -50,7 +51,14 @@ class SSHSession:
         self.client.connect(self.host, self.port, self.username, self.password)
 
     def execute_command(self, command, timeout=20):
-        stdin, stdout, stderr = self.client.exec_command(command,timeout=timeout)
+        stdin, stdout, stderr = self.client.exec_command(command)
+        end_time = time.time() + timeout
+        while not stdout.channel.exit_status_ready():
+            if time.time() > end_time:
+                stdout.channel.close()
+                stderr.channel.close()
+                return "", "Command timed out"
+            time.sleep(0.1)
         return stdout.read().decode("utf-8"), stderr.read().decode("utf-8")
 
     def upload_file(self, local_file_path, remote_file_path):
@@ -250,24 +258,24 @@ class Setup:
         stdout, stderr = p.communicate()
 
         print(message_format(self.config.device_id, "UTC Date", stdout.decode().strip()))
-        device_date = dt.strptime(output.strip(), "%a %b %d %H:%M:%S %Z %Y")
-        utc_date = dt.strptime(stdout.decode().strip(), "%a %d %b %Y %I:%M:%S %p %Z")
-        # utc_date = dt.strptime(stdout.decode().strip(), "%A %d %B %Y %I:%M:%S %p %Z")
+        # device_date = dt.strptime(output.strip(), "%a %b %d %H:%M:%S %Z %Y")
+        # utc_date = dt.strptime(stdout.decode().strip(), "%a %d %b %Y %I:%M:%S %p %Z")
+        # # utc_date = dt.strptime(stdout.decode().strip(), "%A %d %B %Y %I:%M:%S %p %Z")
 
-        if device_date == utc_date:
-            print(message_format(self.config.device_id, "Date Check", "PASS"))
-        else:
-            if(self.config.product_line == "KRT"):
-                utc_date_str = utc_date.strftime("%d %b %Y %H:%M:%S").upper()
-                _,err = self.ssh.execute_command(f"date -s '{utc_date_str}';hwclock -w;hwclock")
-            else:
-                utc_date_str = utc_date.strftime("%m/%d/%Y %H:%M:%S")
-                _,err = self.ssh.execute_command(f"sudo hwclock --set --date \"{utc_date_str}\" -f /dev/rtc;sudo hwclock --hctosys -f /dev/rtc;sudo hwclock -r")
+        # if device_date == utc_date:
+        #     print(message_format(self.config.device_id, "Date Check", "PASS"))
+        # else:
+        #     if(self.config.product_line == "KRT"):
+        #         utc_date_str = utc_date.strftime("%d %b %Y %H:%M:%S").upper()
+        #         _,err = self.ssh.execute_command(f"date -s '{utc_date_str}';hwclock -w;hwclock")
+        #     else:
+        #         utc_date_str = utc_date.strftime("%m/%d/%Y %H:%M:%S")
+        #         _,err = self.ssh.execute_command(f"sudo hwclock --set --date \"{utc_date_str}\" -f /dev/rtc;sudo hwclock --hctosys -f /dev/rtc;sudo hwclock -r")
             
-            if err != "":
-                print(message_format(self.config.device_id, "Date Check", "FAIL"))
-            else:
-                print(message_format(self.config.device_id, "Date Check", "Synced with UTC"))
+        #     if err != "":
+        #         print(message_format(self.config.device_id, "Date Check", "FAIL"))
+        #     else:
+        #         print(message_format(self.config.device_id, "Date Check", "Synced with UTC"))
 
     def get_device_version(self):
         output,err = self.ssh.execute_command("cat /home/ubuntu/.nddevice/nddevice.ini | grep nddevice | head -n 1 | awk -F'= ' {'print $2'}")
@@ -455,21 +463,21 @@ if __name__ == "__main__":
 
     if args.json:
         print("JSON argument provided")
-        with open("device_rack.json") as file:
+        with open("lib/device_rack.json") as file:
             json_data = json.load(file)
             device_data = json_data[args.json]
             device_data = [str(x) for x in device_data]
             file.close()
         broadcast_main(device_data)
         print("\n\n\n")
-        reset_main("device.csv")
+        reset_main("Output/device.csv")
         
     if args.devices:
         print("Devices argument provided")
         device_list = args.devices.split(",")
         broadcast_main(device_list)
         print("\n\n\n")
-        reset_main("device.csv")
+        reset_main("Output/device.csv")
     elif args.csv:
         print("CSV argument provided")
         reset_main(args.csv)
@@ -478,7 +486,10 @@ if __name__ == "__main__":
 
     if args.save:
         print("Saving to Excel")
-        save_table_to_excel(device_status, "device_status.xlsx")
+        output_folder = "Output"
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+        save_table_to_excel(device_status, os.path.join(output_folder, "device_status.xlsx"))
 
     if not args.no_tk:
         print("Displaying Tkinter table")

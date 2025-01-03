@@ -11,6 +11,7 @@
 
 To run the device reset script, you can use the following command-line options:
 
+- `-j` or `--json`: Provide a port number and if it is available inside device_rack.json
 - `-d` or `--devices`: Provide a comma-separated list of devices.
 - `-c` or `--csv`: Provide a CSV file with device information.
 - `-s` or `--save`: Save the output to an Excel file.
@@ -41,10 +42,17 @@ To run the device reset script, you can use the following command-line options:
     ```sh
     python reset.py -d device1,device2,device3 -s
     ```
+
 5. **If you don't want there to be a persisitent table (for use with cron):**
     ```sh
-    python reset.py --no-table ...
+    python reset.py --no-tk ...
      ```
+     
+6. **Using a port number from device_rack.json:**
+
+    ```sh
+    python reset.py -j 8080
+    ```
 # delete_shadow.py
 ## Usage
 - `-d` or `--devices`: Provide a comma-separated list of devices.
